@@ -1,3 +1,43 @@
-1. update and upgrade
+Once your Raspberry Pi is ready,
 
-2. 
+1. update and upgrade
+sudo apt-get update && sudo apt-get upgrade
+
+2. Pre-steps on Raspberry Pi
+Copy wifi setting file
+Create ssh file 
+SPI enabled
+expand file system
+
+3. Install TTN- Packet forwarder
+$ git clone -b spi https://github.com/ttn-zh/ic880a-gateway.git ~/temp
+$ cd ~/temp
+$ sudo ./install.sh spi
+
+======================================================================
+    Keep note of gateway EUI.
+    Disable TTN Packet forwarder.
+    sudo systemctl disable ttn-gateway.service
+    Edit global_conf.json in Basic Packet forwarder.
+    cd /opt/ttn-gateway/packet_forwarder/basic_pkt_fwd/
+    Refer here 62 for global_config.json for different channel plans.
+    Don’t copy and paste the file as it is. Change the SX1301 part only and edit gateway EUI
+    Change Server address to point at your Gateway Bridge. If Gateway bridge is running on your gateway change as follows.
+    "server_address": "127.0.0.1",
+    Reset the gateway. Try the following script from Naresh 37
+    #!/bin/bash
+    echo "17" > /sys/class/gpio/export
+    echo "out" > /sys/class/gpio/gpio17/direction
+    echo "1" > /sys/class/gpio/gpio17/value
+    sleep 5
+    echo "0" > /sys/class/gpio/gpio17/value
+    sleep 1
+    echo "0" > /sys/class/gpio/gpio17/value
+    Run the script as root It’s a sysfs implementation hence SU privileges.
+    Start the packet forwarder.
+    sudo ./basic_pkt_fwd
+    You should see packets being forwarded.
+    Try sudo tail -f /var/log/syslog to check for errors, if any.
+======================================================================
+
+4. 
