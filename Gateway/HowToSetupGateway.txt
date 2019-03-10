@@ -14,10 +14,28 @@ My RAK831 came with an adapter board hosting a GPS module. To enable it, go to r
 Sudo apt-get install git
 
 4. Install TTN- Packet forwarder
-$ git clone -b spi https://github.com/ttn-zh/ic880a-gateway.git ~/temp
-$ cd ~/temp
+$ git clone -b spi https://github.com/ttn-zh/ic880a-gateway.git ~/ic880a-gateway
+$ cd ic880a-gateway
 $ sudo ./install.sh spi
+======================================================================
+(=> Build LoRa gateway app , Build packet forwarder, Start packet forwarder as a service, ttn-gateway.service is running automatically : systemctl status ttn-gateway.service)
+(=> start.sh : already Reset iC880a PIN, but need to adjust pin number.
+and using ./poly_pkt_fwd)
+(=> we should pull the reset pin (19 on the module, It is 17 for the RAK converter board.) high, wait 5 seconds, then pull it low.
+when it use wiringPi then pin 0 , or, 
+File /opt/ttn-gateway/bin/start.sh
+SX1301_RESET_BCM_PIN=17
+and
+File /opt/ttn-gateway/packet_forwarder/reset_pkt_fwd.sh
+IOT_SK_SX1301_RESET_PIN=17, Note that above PIN numbers are NOT PIN numbers but GPIO numbers!, 
+FYI:
+GPIO17 is physical pin 11.
+GPIO25 is physical pin 22.
+Physical pin 17 is +3.3V
+Physical pin 25 is Ground., so in summary, BCM GPIO 17 = physical pin 11 = wiringPi pin 0)
 
+(=> so, have to match => ln -s $INSTALL_DIR/packet_forwarder/poly_pkt_fwd/poly_pkt_fwd ./bin/poly_pkt_fwd
+cp -f ./packet_forwarder/poly_pkt_fwd/global_conf.json ./bin/global_conf.json)
 ======================================================================
     Keep note of gateway EUI.
     Disable TTN Packet forwarder.
@@ -45,3 +63,88 @@ $ sudo ./install.sh spi
 ======================================================================
 
 5. 
+======================================================================
+[debug]
+You will first want to ensure that the process is correctly running. Depending on your system, you can use ps, ps -a or ps -A to display all the running processes. It will return a list of processes, with their PIDs:
+Copy
+
+admin@gateway:/# ps -A
+  PID TTY          TIME CMD
+    1 ??       00:00:00 init
+    6 ??       00:00:00 poly_pkt_fwd
+    8 pts/0    00:00:00 sh
+   10 pts/0    00:00:00 ps
+===================================================================
+### [DOWNSTREAM] ###
+# PULL_DATA sent: 3 (100.00% acknowledged)
+100% of the PULL_DATA should be acknowledged. If 0% is acknowledged, it means the gateway is not connected
+=================================================================
+Your gateway is connected to Internet. This can be checked by using ping 8.8.8.8, and seeing if you receive a response.
+========================================================================
+If you spot messages of the type “PULL_ACK received in xx ms”, you’re home free :)
+===================================================================================
+Log => sudo tail -f /var/log/syslog
+=========================================================
+have you edited in Commissioning.h
+
+    #define LORAWAN_DEVICE_EUI { IEEE_OUI, 0x00, 0x47, … } <-- DELETE IEEE_OUI
+
+============================register========================================
+
+=> note down EUI (B827EBFFFE5D5A07)
+
+remote configuration : No
+
+=========================================================
+
+Configure the packet forwarder (change Gateway_ID and etc)  (AU: 915-928MHz)
+
+pre-installed packet forwarder : Semtech UDP Packet Forwarder(=legacy packet forwarder) (https://www.thethingsnetwork.org/docs/gateways/packet-forwarder/semtech-udp.html#installation)
+
+: https://github.com/TheThingsNetwork/packet_forwarder/tree/legacy
+
+: refer to https://github.com/TheThingsNetwork/gateway-conf/blob/master/AU-global_conf.json
+=> sudo nano /opt/ttn-gateway/packet_forwarder/baseic_pkt_fwd/global_conf.json
+=> sudo nano /opt/ttn-gateway/packet_forwarder/basic_pkt_fwd/local_conf.json
+it nothing works, try with ' ttn eu router..'
+=======================Registration=================
+go to : thethingsnetwork
+go to Console --> Gateways --> Register gateway
+
+fill the Gateway ID (Paste the copied device EUI)and select the legacy packet forwarder
+
+
+=========================reset (whenever restarting pi)============================
+
+git clone git://git.drogon.net/wiringPi
+cd ~/wiringPi
+./build
+
+sudo nano RAK831_reset.c
+
+#include <unistd.h>
+#include <wiringPi.h>
+#define GPIO_RESET_PIN 0 // see wiringPi mapping !
+int main() {
+    wiringPiSetup();
+    pinMode(GPIO_RESET_PIN, OUTPUT);
+    digitalWrite(GPIO_RESET_PIN, HIGH);
+    sleep(5);
+    digitalWrite(GPIO_RESET_PIN, LOW);
+}
+
+gcc -Wall -o RAK831_reset RAK831_reset.c -lwiringPi
+./RAK_reset
+
+=========================Need to start Packet Forwarder?? maybe not===========================
+start the packet forwarder!
+
+cd /opt/ttn-gateway/packet_forwarder/basic_pkt_fwd/
+./basic_pkt_fwd
+
+
+===============You are now ready to create applications and register devices. Happy hacking =====================
+How to check working : we have a bright red RX led
+In terminal :
+systemctl status ttn-gateway.service
+======================================================================
