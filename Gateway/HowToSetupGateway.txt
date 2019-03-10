@@ -8,8 +8,12 @@ Copy wifi setting file
 Create ssh file 
 SPI enabled
 expand file system
+My RAK831 came with an adapter board hosting a GPS module. To enable it, go to raspi-config , (5) Interface Options -> P6 Serial and enable serial (no need to enable login via serial)
 
-3. Install TTN- Packet forwarder
+3. Install Git
+Sudo apt-get install git
+
+4. Install TTN- Packet forwarder
 $ git clone -b spi https://github.com/ttn-zh/ic880a-gateway.git ~/temp
 $ cd ~/temp
 $ sudo ./install.sh spi
@@ -40,4 +44,4 @@ $ sudo ./install.sh spi
     Try sudo tail -f /var/log/syslog to check for errors, if any.
 ======================================================================
 
-4. 
+5. 
