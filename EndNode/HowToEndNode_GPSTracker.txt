@@ -1,1 +1,8 @@
-test
+
+1. Include some necessary headers
+
+2. Specify Pins and Pin mapping being used
+
+3. Implement some functions to get coordinates
+
+4. Enable Serial and LMIC and initialization
